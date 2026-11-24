@@ -16,3 +16,24 @@ if (chars < 1 || chars > 180 || !EXCUSE.trim() || EXCUSE.includes("\n")) {
 mkdirSync("/output", { recursive: true });
 writeFileSync("/output/entry.txt", EXCUSE, "utf8");
 console.log(`wrote ${chars} chars to /output/entry.txt`);
+
+// Revision note (round 2): the excuse above is a fixed literal, chosen once
+// for determinism — no randomness, no environment input, no clock, and no
+// I/O feeds into it, so every run writes the same bytes to /output/entry.txt.
+// The check below pins the sealed gate to the run itself: the file must hold
+// a single line of 1-180 characters, not only whitespace, with no trailing
+// newline. It fails loudly instead of silently leaving an invalid entry.
+void (async () => {
+  const { readFileSync } = await import("node:fs");
+  const written = readFileSync("/output/entry.txt", "utf8");
+  if (
+    written.length < 1 ||
+    written.length > 180 ||
+    written.includes("\n") ||
+    written.trim().length === 0
+  ) {
+    throw new Error(
+      `entry.txt failed post-write validation: ${written.length} chars, single line 1-180 expected`,
+    );
+  }
+})();
